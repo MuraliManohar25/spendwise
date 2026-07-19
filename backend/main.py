@@ -10,9 +10,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "..", "model", "spend_model.joblib")
-FEATURES_PATH = os.path.join(BASE_DIR, "..", "model", "feature_cols.json")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "model", "spend_model.joblib")
+FEATURES_PATH = os.path.join(BASE_DIR, "model", "feature_cols.json")
 
 model = joblib.load(MODEL_PATH)
 with open(FEATURES_PATH, encoding="utf-8") as f:
