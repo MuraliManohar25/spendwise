@@ -1,0 +1,9 @@
+[
+  "monthly_budget",
+  "days_into_month",
+  "rent_or_pg_spent_so_far",
+  "avg_daily_spend",
+  "std_daily_spend",
+  "trend_slope",
+  "max_daily_spend"
+]

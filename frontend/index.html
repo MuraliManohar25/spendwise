@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spendwise</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Georgia, "Times New Roman", serif;
+      background: #f4f1ea;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 560px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    h3 { font-size: 1rem; margin: 1.25rem 0 0.75rem; }
+    .subtitle { color: #555; margin-bottom: 1.5rem; line-height: 1.5; }
+    .card {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 1.25rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    label { display: block; margin-bottom: 0.25rem; font-size: 0.9rem; }
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    .entry-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .entry-row label { grid-column: span 1; }
+    .entry-row input, .entry-row select { grid-column: span 1; }
+    .entry-row .full { grid-column: span 2; }
+    button {
+      padding: 0.65rem 1rem;
+      background: #2c5f2d;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button.secondary { background: #666; }
+    button.danger { background: #8b1a1a; }
+    button.small { padding: 0.25rem 0.5rem; font-size: 0.8rem; width: auto; }
+    button:disabled { background: #888; cursor: not-allowed; }
+    .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .btn-row button { flex: 1; min-width: 120px; }
+    .btn-full { width: 100%; margin-top: 0.5rem; padding: 0.75rem; font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.75rem; }
+    th, td { text-align: left; padding: 0.45rem 0.35rem; border-bottom: 1px solid #ddd; }
+    th { font-weight: bold; color: #444; }
+    .empty-table { color: #777; font-size: 0.9rem; font-style: italic; padding: 0.5rem 0; }
+    .result {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      border-radius: 6px;
+      border: 2px solid;
+      display: none;
+    }
+    .result.show { display: block; }
+    .result.safe { background: #e8f5e9; border-color: #2e7d32; }
+    .result.caution { background: #fff8e1; border-color: #f9a825; }
+    .result.high_risk { background: #ffebee; border-color: #c62828; }
+    .result h2 { font-size: 1.25rem; margin-bottom: 0.75rem; }
+    .result p { margin-bottom: 0.5rem; line-height: 1.4; }
+    .result ul { margin: 0.5rem 0 0.5rem 1.25rem; }
+    .daily-limit {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin: 0.75rem 0;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 4px;
+    }
+    .action-plan {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.75);
+      border-radius: 6px;
+      border-left: 4px solid #2c5f2d;
+    }
+    .action-plan h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+    .action-plan ul { list-style: none; margin: 0; padding: 0; }
+    .action-plan li {
+      padding: 0.4rem 0 0.4rem 1.5rem;
+      position: relative;
+      line-height: 1.4;
+    }
+    .action-plan li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #2c5f2d;
+      font-weight: bold;
+    }
+    .error {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #ffebee;
+      border: 1px solid #c62828;
+      border-radius: 6px;
+      color: #b71c1c;
+      display: none;
+    }
+    .error.show { display: block; }
+    .loading { text-align: center; margin-top: 1rem; color: #555; display: none; }
+    .loading.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Spendwise</h1>
+    <p class="subtitle">
+      Log daily expenses as you go, then check whether your spending pattern
+      will leave you over budget before month-end.
+    </p>
+
+    <div class="card">
+      <label for="monthly_budget">Monthly budget (₹)</label>
+      <input type="number" id="monthly_budget" min="1" value="10000">
+
+      <label for="days_into_month">Days into month (1–30)</label>
+      <input type="number" id="days_into_month" min="1" max="30" value="10">
+
+      <label for="rent_or_pg_spent_so_far">Rent / PG spent so far (₹)</label>
+      <input type="number" id="rent_or_pg_spent_so_far" min="0" value="6000">
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Add daily expense</h3>
+      <div class="entry-row">
+        <div>
+          <label for="entry_day">Day number</label>
+          <input type="number" id="entry_day" min="1" max="30" value="1">
+        </div>
+        <div>
+          <label for="entry_category">Category</label>
+          <select id="entry_category">
+            <option value="food">Food</option>
+            <option value="transport">Transport</option>
+            <option value="misc">Misc</option>
+          </select>
+        </div>
+        <div class="full">
+          <label for="entry_amount">Amount spent (₹)</label>
+          <input type="number" id="entry_amount" min="0" step="1" placeholder="e.g. 350">
+        </div>
+      </div>
+      <button type="button" id="addEntryBtn">Add Entry</button>
+
+      <table id="entriesTable" style="display:none">
+        <thead>
+          <tr><th>Day</th><th>Category</th><th>Amount</th><th></th></tr>
+        </thead>
+        <tbody id="entriesBody"></tbody>
+      </table>
+      <p class="empty-table" id="emptyEntries">No entries yet — add your first expense above.</p>
+
+      <div class="btn-row">
+        <button type="button" class="danger secondary" id="clearBtn">Clear all entries</button>
+      </div>
+    </div>
+
+    <button type="button" class="btn-full" id="submitBtn">Check my risk</button>
+
+    <p class="loading" id="loading">Analyzing your spending pace…</p>
+    <div class="error" id="errorBox"></div>
+
+    <div class="result" id="resultBox">
+      <h2 id="riskTitle"></h2>
+      <p id="projectedSpend"></p>
+      <p class="daily-limit" id="suggestedLimit"></p>
+      <p id="confidence"></p>
+      <p><strong>Why:</strong></p>
+      <ul id="reasonsList"></ul>
+      <div class="action-plan" id="actionPlanBox">
+        <h3>What to do next</h3>
+        <ul id="actionPlanList"></ul>
+      </div>
+      <p id="recommendation"></p>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:8000";
+    const STORAGE_KEY = "spendwise_entries";
+
+    const loading = document.getElementById("loading");
+    const errorBox = document.getElementById("errorBox");
+    const resultBox = document.getElementById("resultBox");
+    const submitBtn = document.getElementById("submitBtn");
+    const entriesTable = document.getElementById("entriesTable");
+    const entriesBody = document.getElementById("entriesBody");
+    const emptyEntries = document.getElementById("emptyEntries");
+
+    let entries = loadEntries();
+
+    function loadEntries() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveEntries() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }
+
+    function nextSuggestedDay() {
+      const maxDays = Number(document.getElementById("days_into_month").value) || 30;
+      if (entries.length === 0) return 1;
+      const maxEntryDay = Math.max(...entries.map((e) => e.day));
+      return Math.min(maxEntryDay + 1, maxDays);
+    }
+
+    function updateDaySuggestion() {
+      document.getElementById("entry_day").value = nextSuggestedDay();
+    }
+
+    function renderEntries() {
+      entriesBody.innerHTML = "";
+      if (entries.length === 0) {
+        entriesTable.style.display = "none";
+        emptyEntries.style.display = "block";
+        return;
+      }
+      emptyEntries.style.display = "none";
+      entriesTable.style.display = "table";
+      const sorted = [...entries].sort((a, b) => a.day - b.day || a.id.localeCompare(b.id));
+      sorted.forEach((entry) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td>Day " + entry.day + "</td>" +
+          "<td>" + entry.category.charAt(0).toUpperCase() + entry.category.slice(1) + "</td>" +
+          "<td>₹" + entry.amount.toLocaleString("en-IN") + "</td>" +
+          '<td><button type="button" class="small danger" data-id="' + entry.id + '">Delete</button></td>';
+        tr.querySelector("button").addEventListener("click", () => {
+          entries = entries.filter((e) => e.id !== entry.id);
+          saveEntries();
+          renderEntries();
+          updateDaySuggestion();
+        });
+        entriesBody.appendChild(tr);
+      });
+    }
+
+    function aggregateForApi(daysIntoMonth) {
+      const dailyLog = Array(daysIntoMonth).fill(0);
+      const categoryTotals = { food: 0, transport: 0, misc: 0 };
+      entries.forEach((e) => {
+        if (e.day >= 1 && e.day <= daysIntoMonth) {
+          dailyLog[e.day - 1] += e.amount;
+          if (categoryTotals[e.category] !== undefined) {
+            categoryTotals[e.category] += e.amount;
+          }
+        }
+      });
+      return { daily_spending_log: dailyLog, category_totals: categoryTotals };
+    }
+
+    document.getElementById("addEntryBtn").addEventListener("click", () => {
+      const day = Number(document.getElementById("entry_day").value);
+      const category = document.getElementById("entry_category").value;
+      const amount = Number(document.getElementById("entry_amount").value);
+      const maxDays = Number(document.getElementById("days_into_month").value);
+
+      if (!day || day < 1 || day > maxDays) {
+        alert("Day must be between 1 and " + maxDays + ".");
+        return;
+      }
+      if (!amount || amount <= 0) {
+        alert("Enter a valid amount greater than 0.");
+        return;
+      }
+
+      entries.push({
+        id: crypto.randomUUID(),
+        day,
+        category,
+        amount,
+      });
+      saveEntries();
+      renderEntries();
+      document.getElementById("entry_amount").value = "";
+      updateDaySuggestion();
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (confirm("Clear all logged entries? This cannot be undone.")) {
+        entries = [];
+        saveEntries();
+        renderEntries();
+        updateDaySuggestion();
+      }
+    });
+
+    document.getElementById("days_into_month").addEventListener("change", updateDaySuggestion);
+
+    submitBtn.addEventListener("click", async () => {
+      loading.classList.add("show");
+      errorBox.classList.remove("show");
+      resultBox.classList.remove("show");
+      submitBtn.disabled = true;
+
+      const daysIntoMonth = Number(document.getElementById("days_into_month").value);
+      const { daily_spending_log, category_totals } = aggregateForApi(daysIntoMonth);
+
+      const payload = {
+        monthly_budget: Number(document.getElementById("monthly_budget").value),
+        days_into_month: daysIntoMonth,
+        rent_or_pg_spent_so_far: Number(document.getElementById("rent_or_pg_spent_so_far").value),
+        daily_spending_log,
+        category_totals,
+      };
+
+      try {
+        const res = await fetch(API_URL + "/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          const detail = err.detail;
+          const msg = Array.isArray(detail)
+            ? detail.map((d) => d.msg).join("; ")
+            : detail || "Server error (" + res.status + ")";
+          throw new Error(msg);
+        }
+
+        showResult(await res.json());
+      } catch (err) {
+        errorBox.textContent = "Could not reach the API. Is the server running? " + err.message;
+        errorBox.classList.add("show");
+      } finally {
+        loading.classList.remove("show");
+        submitBtn.disabled = false;
+      }
+    });
+
+    function showResult(data) {
+      resultBox.className = "result show " + data.risk_tier.toLowerCase();
+
+      const tierLabels = {
+        SAFE: "You are on track — SAFE",
+        CAUTION: "Watch out — CAUTION",
+        HIGH_RISK: "Overspend likely — HIGH RISK",
+      };
+      document.getElementById("riskTitle").textContent = tierLabels[data.risk_tier] || data.risk_tier;
+      document.getElementById("projectedSpend").textContent =
+        "Projected month-end spend: ₹" + data.projected_month_end_spend.toLocaleString("en-IN");
+      document.getElementById("suggestedLimit").textContent =
+        "Suggested daily limit for the rest of the month: ₹" +
+        data.suggested_daily_limit.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+      document.getElementById("confidence").textContent =
+        "Model confidence: " + (data.confidence * 100).toFixed(1) + "%";
+
+      const reasonsList = document.getElementById("reasonsList");
+      reasonsList.innerHTML = "";
+      data.reasons.forEach((r) => {
+        const li = document.createElement("li");
+        li.textContent = r;
+        reasonsList.appendChild(li);
+      });
+
+      const actionList = document.getElementById("actionPlanList");
+      actionList.innerHTML = "";
+      (data.action_plan || []).forEach((a) => {
+        const li = document.createElement("li");
+        li.textContent = a;
+        actionList.appendChild(li);
+      });
+
+      document.getElementById("recommendation").textContent = data.recommendation;
+      resultBox.classList.add("show");
+    }
+
+    renderEntries();
+    updateDaySuggestion();
+  </script>
+</body>
+</html>
